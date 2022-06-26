@@ -25,4 +25,4 @@ if (!installedDeps) process.exit(-1)
 
 console.log("Congratulations! You're API app and Shared library are ready.")
 console.log('Follow the following commands to start')
-console.log(`cd ${repositoryName} && npm serve api`)
+console.log(`cd ${repositoryName} && nx serve api`)
