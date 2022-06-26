@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const { execSync } = require('child_process')
 const { program } = require('commander')
-const { readFileSync, writeFileSync, unlinkSync, existsSync, createWriteStream } = require('fs')
+const { readFileSync, writeFileSync, unlinkSync, existsSync, createWriteStream, renameSync } = require('fs')
 const { join } = require('path')
 const { replaceInFileSync } = require('replace-in-file')
 const extract = require('extract-zip')
@@ -101,12 +101,17 @@ async function install(params) {
           return false
         }
 
+        // download zip file
         const file = join(workingDir, `${uuidv4()}.zip`)
         const url = 'https://github.com/saeidjoker/nx-ddd-template/archive/refs/heads/main.zip'
         await download(url, file)
 
+        // unzip and delete the zip file
         await unzip(file, workingDir)
         unlinkSync(file)
+
+        // rename the folder which was inside the zip file
+        renameSync('nx-ddd-template-main', name)
 
         // cd into directory
         workingDir = join(workingDir, name)
