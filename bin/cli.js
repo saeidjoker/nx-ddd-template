@@ -1,17 +1,26 @@
 #!/usr/bin/env node
 const { execSync } = require('child_process')
 const { program } = require('commander')
-const { readFileSync, writeFileSync } = require('fs')
+const { readFileSync, writeFileSync, unlinkSync, existsSync, createWriteStream } = require('fs')
 const { join } = require('path')
 const { replaceInFileSync } = require('replace-in-file')
+const extract = require('extract-zip')
+const { promisify } = require('util')
+const { pipeline } = require('stream')
+const { randomUUID } = require('crypto')
 
 let inquirer
-import('inquirer').then((module) => {
+let fetch
+import('inquirer').then(async (module) => {
   inquirer = module.default
-  main()
+  import('node-fetch').then(async (module2) => {
+    fetch = module2.default
+
+    await main()
+  })
 })
 
-const runCommand = (command) => {
+function runCommand(command) {
   try {
     execSync(command, { stdio: 'inherit' })
     return true
@@ -21,60 +30,88 @@ const runCommand = (command) => {
   }
 }
 
-const isYes = (v) => v === true || v.toLowerCase() === 'y'
+function isYes(v) {
+  return v === true || v.toLowerCase() === 'y'
+}
 
-function main() {
-  const interactiveMode = () => {
-    inquirer
-      .prompt([
-        {
-          type: 'input',
-          name: 'name',
-          message: 'Repository name:',
-        },
-        {
-          type: 'confirm',
-          name: 'nvm',
-          message: 'Use NVM?',
-          default: true,
-        },
-        {
-          type: 'confirm',
-          name: 'husky',
-          message: 'Use husky?',
-          default: true,
-        },
-      ])
-      .then((answers) => {
-        answers.nvm = answers.nvm ? 'y' : 'n'
-        answers.husky = answers.husky ? 'y' : 'n'
-        install(answers)
-      })
-      .catch((error) => {
-        if (error.isTtyError) {
-          // Prompt couldn't be rendered in the current environment
-        } else {
-          // Something else went wrong
-        }
-      })
+async function download(url, filePath) {
+  if (existsSync(filePath)) unlinkSync(filePath)
+
+  const streamPipeline = promisify(pipeline)
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`unexpected response ${response.statusText}`)
+  await streamPipeline(response.body, createWriteStream(filePath))
+}
+
+async function unzip(file, dir) {
+  await extract(file, { dir })
+}
+
+async function main() {
+  async function interactiveMode() {
+    return new Promise((resolve, reject) => {
+      inquirer
+        .prompt([
+          {
+            type: 'input',
+            name: 'name',
+            message: 'Repository name:',
+          },
+          {
+            type: 'confirm',
+            name: 'nvm',
+            message: 'Use NVM?',
+            default: true,
+          },
+          {
+            type: 'confirm',
+            name: 'husky',
+            message: 'Use husky?',
+            default: true,
+          },
+        ])
+        .then((answers) => {
+          answers.nvm = answers.nvm ? 'y' : 'n'
+          answers.husky = answers.husky ? 'y' : 'n'
+          resolve(answers)
+        })
+        .catch((error) => {
+          if (error.isTtyError) {
+            // Prompt couldn't be rendered in the current environment
+          } else {
+            // Something else went wrong
+          }
+          reject(error)
+        })
+    })
   }
 
-  const install = (params) => {
+  async function install(params) {
     const { nvm, husky, name } = params
 
-    let directory = process.cwd()
+    let workingDir = process.cwd()
 
     const commands = [
       [
-        `Cloning the repository with name ${name}`,
+        `Downloading repository with name ${name}`,
         () => true,
-        () => {
-          const cmd = `git clone --depth 1 git@github.com:saeidjoker/nx-ddd-template.git ${name}`
-          if (!runCommand(cmd)) {
+        async () => {
+          if (existsSync(join(workingDir, name))) {
+            console.log(`Directory ${name} already exists! Please remove it first to continue`)
             process.exit(-1)
+            return false
           }
+
+          const file = join(workingDir, `${randomUUID()}.zip`)
+          const url = 'https://github.com/saeidjoker/nx-ddd-template/archive/refs/heads/main.zip'
+          await download(url, file)
+
+          await unzip(file, workingDir)
+          unlinkSync(file)
+
           // cd into directory
-          directory = join(directory, name)
+          workingDir = join(workingDir, name)
+
           return true
         },
       ],
@@ -82,13 +119,13 @@ function main() {
       [
         'Replacing repository name',
         () => true,
-        () =>
+        async () =>
           replaceInFileSync({
             files: [
-              join(directory, 'nx.json'),
-              join(directory, 'README.md'),
-              join(directory, 'tsconfig.base.json'),
-              join(directory, 'packages/shared/package.json'),
+              join(workingDir, 'nx.json'),
+              join(workingDir, 'README.md'),
+              join(workingDir, 'tsconfig.base.json'),
+              join(workingDir, 'packages/shared/package.json'),
             ],
             from: 'e-commerce',
             to: name,
@@ -97,19 +134,20 @@ function main() {
       [
         `Update package.json`,
         () => true,
-        () => {
-          const filePath = join(directory, 'package.json')
+        async () => {
+          const filePath = join(workingDir, 'package.json')
           const json = JSON.parse(readFileSync(filePath))
           json.name = name
           json.version = '0.0.1'
           writeFileSync(filePath, JSON.stringify(json, null, 2))
+          return true
         },
       ],
       [
         'Removing husky',
         () => !isYes(husky),
-        () => {
-          const filePath = join(directory, 'package.json')
+        async () => {
+          const filePath = join(workingDir, 'package.json')
           const json = JSON.parse(readFileSync(filePath))
           delete json.scripts.prepare
           delete json.scripts.postinstall
@@ -119,15 +157,16 @@ function main() {
           return runCommand(`cd ${name} && rm -rf .husky`)
         },
       ],
-      ['Removing nvm', () => !isYes(nvm), () => runCommand(`cd ${name} && rm .nvmrc`)],
-      [`Installing dependencies for ${name}`, () => true, () => runCommand(`cd ${name} && npm install`)],
+      ['Removing nvm', () => !isYes(nvm), async () => runCommand(`cd ${name} && rm .nvmrc`)],
+      [`Installing dependencies for ${name}`, () => true, async () => runCommand(`cd ${name} && npm install`)],
     ]
 
-    for (let i = 0; i < commands.length; i++) {
+    for (let i = 0; i < 1; i++) {
       const [cmdDescription, canExecute, execute] = commands[i]
       if (canExecute()) {
         console.log(`${cmdDescription}...`)
-        if (execute()) {
+        const res = await execute()
+        if (res) {
           console.log('===> Successful')
         } else {
           console.warn('===> Failed')
@@ -149,8 +188,8 @@ function main() {
 
   const hasRequiredOptions = options.name && options.nvm && options.husky
   if (!hasRequiredOptions) {
-    interactiveMode()
+    await install(await interactiveMode())
   } else {
-    install(options)
+    await install(options)
   }
 }
