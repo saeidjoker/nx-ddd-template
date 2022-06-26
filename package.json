@@ -1,11 +1,17 @@
 {
-  "name": "e-commerce",
+  "name": "@saeidjoker/nx-ddd-template",
   "version": "0.0.0",
   "description": "An Nx Starter with a shared library and NestJs as backend",
   "license": "MIT",
+  "author": {
+    "name": "Saeed Farahi Mohassel",
+    "email": "saeedfarahimohassel@gmail.com",
+    "url": "https://github.com/saeidjoker"
+  },
   "bin": "./bin/cli.js",
   "scripts": {
-    "prepare": "npx husky install",
+    "prepare": "husky install",
+    "postinstall": "npx husky install",
     "test": "nx affected:test",
     "test:all": "nx run-many --all --target=test",
     "lint": "nx affected:lint",
