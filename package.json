@@ -31,6 +31,7 @@
     "@nrwl/nest": "^14.3.6",
     "@nrwl/node": "14.3.6",
     "@nrwl/workspace": "14.3.6",
+    "@types/inquirer": "^8.2.1",
     "@types/jest": "27.4.1",
     "@types/lodash": "^4.14.182",
     "@types/node": "16.11.7",
@@ -51,9 +52,12 @@
     "@nestjs/common": "^8.0.0",
     "@nestjs/core": "^8.0.0",
     "@nestjs/platform-express": "^8.0.0",
+    "commander": "^9.3.0",
+    "inquirer": "^9.0.0",
     "lodash.clonedeep": "^4.5.0",
     "lodash.isequal": "^4.5.0",
     "reflect-metadata": "^0.1.13",
+    "replace-in-file": "^6.3.5",
     "rxjs": "^7.0.0",
     "tslib": "^2.3.0"
   }
