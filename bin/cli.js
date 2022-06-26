@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const { execSync } = require('child_process')
 const { program } = require('commander')
-const replaceInFile = require('replace-in-file')
+const { replaceInFileSync } = require('replace-in-file')
 
 let inquirer
 import('inquirer').then((module) => {
@@ -14,12 +14,10 @@ const runCommand = (command) => {
     execSync(command, { stdio: 'inherit' })
     return true
   } catch (error) {
-    console.log(`Failed to execute ${command}`, e)
+    console.warn(`Failed to execute ${command}`, e)
     return false
   }
 }
-
-const isYes = (v) => (typeof v === 'string' && v.toString().toLowerCase() === 'y') || (typeof v === 'boolean' && v)
 
 function main() {
   const interactiveMode = () => {
@@ -61,7 +59,67 @@ function main() {
     console.log(params)
     const { nvm, husky, name } = params
 
-    
+    const commands = [
+      [
+        `Cloning the repository with name ${name}`,
+        () => true,
+        () => {
+          const cmd = `git clone --depth 1 git@github.com:saeidjoker/nx-ddd-template.git ${name}`
+          if (!runCommand(cmd)) {
+            process.exit(-1)
+          }
+        },
+      ],
+      [
+        `Installing dependencies for ${name}`,
+        () => true,
+        () => {
+          const cmd = `cd ${name} && npm install`
+          if (runCommand(cmd)) {
+          }
+        },
+      ],
+      [
+        'Replacing repository name',
+        () => true,
+        () => {
+          const result = replaceInFileSync({
+            files: ['nx.json', 'README.md', 'tsconfig.base.json', 'packages/shared/package.json'],
+            from: 'e-commerce',
+            to: name,
+          })
+          console.log(`Updated ${result.length} files with repository name`)
+        },
+      ],
+      [
+        'Removing husky',
+        () => !husky,
+        () => {
+          const cmd =
+            'npm set-script prepare "" && npm set-script postinstall "" && npm uninstall husky && rm -rf .husky'
+          runCommand(cmd)
+        },
+      ],
+      [
+        'Removing nvm',
+        () => !nvm,
+        () => {
+          runCommand('rm .nvmrc')
+        },
+      ],
+    ]
+
+    for (let i = 0; i < commands.length; i++) {
+      const [cmdDescription, canExecute, execute] = commands[i]
+      if (canExecute()) {
+        console.log(cmdDescription)
+        execute()
+      }
+    }
+
+    console.log("Congratulations! You're API app and Shared library are ready.")
+    console.log('Follow the following commands to start')
+    console.log(`cd ${name} && nx serve api`)
   }
 
   const options = program
@@ -77,20 +135,4 @@ function main() {
   } else {
     install(options)
   }
-
-  // const repositoryName = process.argv[2]
-  // const gitCheckoutCommand = `git clone --depth 1 git@github.com:saeidjoker/nx-ddd-template.git ${repositoryName}`
-  // const installDepsCommand = `cd ${repositoryName} && npm i`
-
-  // console.log(`Cloning the repository with name ${repositoryName}`)
-  // const checkedOut = runCommand(gitCheckoutCommand)
-  // if (!checkedOut) process.exit(-1)
-
-  // console.log(`Installing dependencies for ${repositoryName}`)
-  // const installedDeps = runCommand(installDepsCommand)
-  // if (!installedDeps) process.exit(-1)
-
-  // console.log("Congratulations! You're API app and Shared library are ready.")
-  // console.log('Follow the following commands to start')
-  // console.log(`cd ${repositoryName} && nx serve api`)
 }
