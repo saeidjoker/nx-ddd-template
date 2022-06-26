@@ -7,7 +7,7 @@ const { replaceInFileSync } = require('replace-in-file')
 const extract = require('extract-zip')
 const { promisify } = require('util')
 const { pipeline } = require('stream')
-const { randomUUID } = require('crypto')
+const { v4: uuidv4 } = require('uuid')
 
 let inquirer
 let fetch
@@ -101,7 +101,7 @@ async function install(params) {
           return false
         }
 
-        const file = join(workingDir, `${randomUUID()}.zip`)
+        const file = join(workingDir, `${uuidv4()}.zip`)
         const url = 'https://github.com/saeidjoker/nx-ddd-template/archive/refs/heads/main.zip'
         await download(url, file)
 
