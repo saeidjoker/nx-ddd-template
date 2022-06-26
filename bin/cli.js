@@ -59,24 +59,26 @@ function main() {
     console.log(params)
     const { nvm, husky, name } = params
 
+    const version = '0.0.1'
+
     const commands = [
       [
         `Cloning the repository with name ${name}`,
-        () => false,
+        () => true,
         () => {
           const cmd = `git clone --depth 1 git@github.com:saeidjoker/nx-ddd-template.git ${name}`
           if (!runCommand(cmd)) {
             process.exit(-1)
           }
+          return true
         },
       ],
       [
         `Installing dependencies for ${name}`,
-        () => false,
+        () => true,
         () => {
           const cmd = `cd ${name} && rm package-lock.json && npm install`
-          if (runCommand(cmd)) {
-          }
+          return runCommand(cmd)
         },
       ],
       [
@@ -94,21 +96,19 @@ function main() {
             to: name,
           })
           console.log(`Updated ${result.length + result2.length} files with repository name`)
+          return true
         },
       ],
       [
-        'Reset version',
+        `Reset version to ${version} in package.json`,
         () => true,
         () => {
-          const version = '0.0.1'
           const result = replaceInFileSync({
             files: 'package.json',
             from: /"version"\s*:\s*"\d+.\d+.\d+",/g,
-            to: version,
+            to: `"version": "${version}",`,
           })
-          if (result.length > 0) {
-            console.log(`Reset version to ${version} in package.json`)
-          }
+          return result.length > 0
         },
       ],
       [
@@ -117,14 +117,14 @@ function main() {
         () => {
           const cmd =
             'npm set-script prepare "" && npm set-script postinstall "" && npm uninstall husky && rm -rf .husky'
-          runCommand(cmd)
+          return runCommand(cmd)
         },
       ],
       [
         'Removing nvm',
         () => !nvm,
         () => {
-          runCommand('rm .nvmrc')
+          return runCommand('rm .nvmrc')
         },
       ],
     ]
@@ -132,8 +132,13 @@ function main() {
     for (let i = 0; i < commands.length; i++) {
       const [cmdDescription, canExecute, execute] = commands[i]
       if (canExecute()) {
-        console.log(cmdDescription)
-        execute()
+        console.log(`${cmdDescription}...`)
+        if (execute()) {
+          console.log('Successful')
+        } else {
+          console.warn('Failed')
+          console.log('------------------------------\n')
+        }
       }
     }
 
