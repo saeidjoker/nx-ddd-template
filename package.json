@@ -1,13 +1,8 @@
 {
   "name": "@saeidjoker/nx-ddd-template",
-  "version": "0.0.1",
+  "version": "0.0.9",
   "description": "An Nx Starter with a shared library and NestJs as backend",
   "license": "MIT",
-  "author": {
-    "name": "Saeed Farahi Mohassel",
-    "email": "saeedfarahimohassel@gmail.com",
-    "url": "https://github.com/saeidjoker"
-  },
   "bin": "./bin/cli.js",
   "scripts": {
     "prepare": "husky install",

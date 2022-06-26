@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 const { execSync } = require('child_process')
 const { program } = require('commander')
+const { unlinkSync, existsSync } = require('fs')
+const { join } = require('path')
 const { replaceInFileSync } = require('replace-in-file')
 
 let inquirer
@@ -18,6 +20,8 @@ const runCommand = (command) => {
     return false
   }
 }
+
+const isYes = (v) => v === true || v.toLowerCase() === 'y'
 
 function main() {
   const interactiveMode = () => {
@@ -56,8 +60,9 @@ function main() {
   }
 
   const install = (params) => {
-    console.log(params)
     const { nvm, husky, name } = params
+
+    let directory = process.cwd()
 
     const version = '0.0.1'
 
@@ -70,28 +75,28 @@ function main() {
           if (!runCommand(cmd)) {
             process.exit(-1)
           }
+          // cd into directory
+          directory = join(directory, name)
           return true
         },
       ],
-      [
-        `Installing dependencies for ${name}`,
-        () => true,
-        () => {
-          const cmd = `cd ${name} && rm package-lock.json && npm install`
-          return runCommand(cmd)
-        },
-      ],
+      ['Remove package-lock', () => true, () => runCommand(`cd ${name} && rm package-lock.json`)],
       [
         'Replacing repository name',
         () => true,
         () => {
           const result = replaceInFileSync({
-            files: ['nx.json', 'README.md', 'tsconfig.base.json', 'packages/shared/package.json'],
+            files: [
+              join(directory, 'nx.json'),
+              join(directory, 'README.md'),
+              join(directory, 'tsconfig.base.json'),
+              join(directory, 'packages/shared/package.json'),
+            ],
             from: 'e-commerce',
             to: name,
           })
           const result2 = replaceInFileSync({
-            files: 'package.json',
+            files: join(directory, 'package.json'),
             from: '@saeidjoker/nx-ddd-template',
             to: name,
           })
@@ -102,31 +107,26 @@ function main() {
       [
         `Reset version to ${version} in package.json`,
         () => true,
-        () => {
-          const result = replaceInFileSync({
-            files: 'package.json',
+        () =>
+          replaceInFileSync({
+            files: join(directory, 'package.json'),
             from: /"version"\s*:\s*"\d+.\d+.\d+",/g,
             to: `"version": "${version}",`,
-          })
-          return result.length > 0
-        },
+          }).length > 0,
       ],
+      [`Installing dependencies for ${name}`, () => true, () => runCommand(`cd ${name} && npm install`)],
       [
         'Removing husky',
-        () => !husky,
+        () => !isYes(husky),
         () => {
-          const cmd =
-            'npm set-script prepare "" && npm set-script postinstall "" && npm uninstall husky && rm -rf .husky'
-          return runCommand(cmd)
+          return (
+            runCommand(`cd ${name} && npm set-script prepare ""`) &&
+            runCommand(`cd ${name} && npm set-script postinstall ""`) &&
+            runCommand(`cd ${name} && npm uninstall husky && rm -rf .husky`)
+          )
         },
       ],
-      [
-        'Removing nvm',
-        () => !nvm,
-        () => {
-          return runCommand('rm .nvmrc')
-        },
-      ],
+      ['Removing nvm', () => !isYes(nvm), () => runCommand(`cd ${name} && rm .nvmrc`)],
     ]
 
     for (let i = 0; i < commands.length; i++) {
@@ -134,10 +134,9 @@ function main() {
       if (canExecute()) {
         console.log(`${cmdDescription}...`)
         if (execute()) {
-          console.log('Successful')
+          console.log('===> Successful')
         } else {
-          console.warn('Failed')
-          console.log('------------------------------\n')
+          console.warn('===> Failed')
         }
       }
     }
@@ -154,8 +153,8 @@ function main() {
     .parse(process.argv)
     .opts()
 
-  const hasAllOptions = options.name && options.nvm && options.husky
-  if (!hasAllOptions) {
+  const hasRequiredOptions = options.name && options.nvm && options.husky
+  if (!hasRequiredOptions) {
     interactiveMode()
   } else {
     install(options)
