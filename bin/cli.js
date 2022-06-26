@@ -62,7 +62,7 @@ function main() {
     const commands = [
       [
         `Cloning the repository with name ${name}`,
-        () => true,
+        () => false,
         () => {
           const cmd = `git clone --depth 1 git@github.com:saeidjoker/nx-ddd-template.git ${name}`
           if (!runCommand(cmd)) {
@@ -72,9 +72,9 @@ function main() {
       ],
       [
         `Installing dependencies for ${name}`,
-        () => true,
+        () => false,
         () => {
-          const cmd = `cd ${name} && npm install`
+          const cmd = `cd ${name} && rm package-lock.json && npm install`
           if (runCommand(cmd)) {
           }
         },
@@ -88,7 +88,27 @@ function main() {
             from: 'e-commerce',
             to: name,
           })
-          console.log(`Updated ${result.length} files with repository name`)
+          const result2 = replaceInFileSync({
+            files: 'package.json',
+            from: '@saeidjoker/nx-ddd-template',
+            to: name,
+          })
+          console.log(`Updated ${result.length + result2.length} files with repository name`)
+        },
+      ],
+      [
+        'Reset version',
+        () => true,
+        () => {
+          const version = '0.0.1'
+          const result = replaceInFileSync({
+            files: 'package.json',
+            from: /"version"\s*:\s*"\d+.\d+.\d+",/g,
+            to: version,
+          })
+          if (result.length > 0) {
+            console.log(`Reset version to ${version} in package.json`)
+          }
         },
       ],
       [
