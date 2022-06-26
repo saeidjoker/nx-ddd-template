@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const { execSync } = require('child_process')
 const { program } = require('commander')
-const { unlinkSync, existsSync } = require('fs')
+const { readFileSync, writeFileSync } = require('fs')
 const { join } = require('path')
 const { replaceInFileSync } = require('replace-in-file')
 
@@ -64,8 +64,6 @@ function main() {
 
     let directory = process.cwd()
 
-    const version = '0.0.1'
-
     const commands = [
       [
         `Cloning the repository with name ${name}`,
@@ -84,8 +82,8 @@ function main() {
       [
         'Replacing repository name',
         () => true,
-        () => {
-          const result = replaceInFileSync({
+        () =>
+          replaceInFileSync({
             files: [
               join(directory, 'nx.json'),
               join(directory, 'README.md'),
@@ -94,39 +92,35 @@ function main() {
             ],
             from: 'e-commerce',
             to: name,
-          })
-          const result2 = replaceInFileSync({
-            files: join(directory, 'package.json'),
-            from: '@saeidjoker/nx-ddd-template',
-            to: name,
-          })
-          console.log(`Updated ${result.length + result2.length} files with repository name`)
-          return true
-        },
-      ],
-      [
-        `Reset version to ${version} in package.json`,
-        () => true,
-        () =>
-          replaceInFileSync({
-            files: join(directory, 'package.json'),
-            from: /"version"\s*:\s*"\d+.\d+.\d+",/g,
-            to: `"version": "${version}",`,
           }).length > 0,
       ],
-      [`Installing dependencies for ${name}`, () => true, () => runCommand(`cd ${name} && npm install`)],
+      [
+        `Update package.json`,
+        () => true,
+        () => {
+          const filePath = join(directory, 'package.json')
+          const json = JSON.parse(readFileSync(filePath))
+          json.name = name
+          json.version = '0.0.1'
+          writeFileSync(filePath, JSON.stringify(json, null, 2))
+        },
+      ],
       [
         'Removing husky',
         () => !isYes(husky),
         () => {
-          return (
-            runCommand(`cd ${name} && npm set-script prepare ""`) &&
-            runCommand(`cd ${name} && npm set-script postinstall ""`) &&
-            runCommand(`cd ${name} && npm uninstall husky && rm -rf .husky`)
-          )
+          const filePath = join(directory, 'package.json')
+          const json = JSON.parse(readFileSync(filePath))
+          delete json.scripts.prepare
+          delete json.scripts.postinstall
+          delete json.devDependencies.husky
+          writeFileSync(filePath, JSON.stringify(json, null, 2))
+
+          return runCommand(`cd ${name} && rm -rf .husky`)
         },
       ],
       ['Removing nvm', () => !isYes(nvm), () => runCommand(`cd ${name} && rm .nvmrc`)],
+      [`Installing dependencies for ${name}`, () => true, () => runCommand(`cd ${name} && npm install`)],
     ]
 
     for (let i = 0; i < commands.length; i++) {
