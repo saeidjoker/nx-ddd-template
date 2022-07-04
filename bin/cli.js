@@ -174,7 +174,7 @@ async function install(params) {
           from: 'e-commerce',
           to: name,
         })
-        copyFileSync(sampleLeftHookFilePath, join(workingDir, 'lefthook.yml'))
+        copyFileSync(sampleLeftHookFilePath, join(rootDir, 'lefthook.yml'))
         unlinkSync(sampleLeftHookFilePath)
         return runCommand(`cd ${rootDir} && npx lefthook run pre-commit`)
       },
