@@ -1,8 +1,17 @@
 #!/usr/bin/env node
 const { execSync } = require('child_process')
 const { program } = require('commander')
-const { readFileSync, writeFileSync, unlinkSync, existsSync, createWriteStream, renameSync } = require('fs')
-const { join } = require('path')
+const {
+  readFileSync,
+  writeFileSync,
+  unlinkSync,
+  existsSync,
+  createWriteStream,
+  renameSync,
+  copyFileSync,
+  rmSync,
+} = require('fs')
+const { join, resolve } = require('path')
 const { replaceInFileSync } = require('replace-in-file')
 const extract = require('extract-zip')
 const { promisify } = require('util')
@@ -64,14 +73,20 @@ async function interactiveMode() {
         },
         {
           type: 'confirm',
-          name: 'husky',
-          message: 'Use husky?',
+          name: 'lefthook',
+          message: 'Use lefthook?',
           default: true,
+        },
+        {
+          type: 'input',
+          name: 'rootpath',
+          message: 'Relative path to the repository root folder',
+          default: '..',
         },
       ])
       .then((answers) => {
         answers.nvm = answers.nvm ? 'y' : 'n'
-        answers.husky = answers.husky ? 'y' : 'n'
+        answers.lefthook = answers.lefthook ? 'y' : 'n'
         resolve(answers)
       })
       .catch((error) => {
@@ -86,9 +101,10 @@ async function interactiveMode() {
 }
 
 async function install(params) {
-  const { nvm, husky, name } = params
+  const { nvm, lefthook, name, rootpath } = params
 
   let workingDir = process.cwd()
+  let rootDir = null
 
   const commands = [
     [
@@ -113,8 +129,9 @@ async function install(params) {
         // rename the folder which was inside the zip file
         renameSync('nx-ddd-template-main', name)
 
-        // cd into directory
+        // cd into directory and resolve rootDir
         workingDir = join(workingDir, name)
+        rootDir = resolve(rootpath, workingDir)
 
         return true
       },
@@ -148,17 +165,19 @@ async function install(params) {
       },
     ],
     [
-      'Installing husky',
-      () => isYes(husky),
+      'Installing lefthook',
+      () => isYes(lefthook),
       async () => {
-        const filePath = join(workingDir, 'package.json')
-        const json = JSON.parse(readFileSync(filePath))
-        json.scripts.prepare = 'npx husky install'
-        writeFileSync(filePath, JSON.stringify(json, null, 2))
-
-        return runCommand(
-          `cd ${name} && ${json.scripts.prepare} && npx husky add .husky/pre-commit "npm run lint" && npx husky add .husky/pre-commit "npm test" && npx husky add .husky/pre-commit "npm run e2e"`,
-        )
+        console.log(`Repository located at ${rootDir}. Will add lefthook.yaml there.`)
+        var sampleLeftHookFilePath = join(workingDir, 'lefthook.yaml.sample')
+        replaceInFileSync({
+          files: [sampleLeftHookFilePath],
+          from: 'e-commerce',
+          to: name,
+        })
+        copyFileSync(sampleLeftHookFilePath, join(workingDir, 'lefthook.yml'))
+        rmSync(sampleLeftHookFilePath)
+        return runCommand(`cd ${rootDir} && npx lefthook run pre-commit`)
       },
     ],
     ['Removing nvm', () => !isYes(nvm), async () => runCommand(`cd ${name} && rm .nvmrc`)],
@@ -187,11 +206,12 @@ async function main() {
   const options = program
     .option('--name <name>', 'Repository name')
     .option('--nvm <Y/n>', 'Use NVM', 'y')
-    .option('--husky <Y/n>', 'Use husky', 'y')
+    .option('--lefthook <Y/n>', 'Use lefthook', 'y')
+    .option('--rootpath <path>', 'Relative path to the repository root folder', '..')
     .parse(process.argv)
     .opts()
 
-  const hasRequiredOptions = options.name && options.nvm && options.husky
+  const hasRequiredOptions = options.name && options.nvm && options.lefthook && option.rootpath
   if (!hasRequiredOptions) {
     await install(await interactiveMode())
   } else {

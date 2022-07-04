@@ -1,0 +1,9 @@
+pre-commit:
+  parallel: true
+  commands:
+    linter:
+      run: cd e-commerce && npm run lint
+    test:
+      run: cd e-commerce && npm test
+    e2e:
+      run: cd e-commerce && npm run e2e
