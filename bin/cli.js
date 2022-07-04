@@ -153,11 +153,12 @@ async function install(params) {
       async () => {
         const filePath = join(workingDir, 'package.json')
         const json = JSON.parse(readFileSync(filePath))
-        json.scripts.prepare = 'husky install'
-        json.scripts.postinstall = 'npx husky install'
+        json.scripts.prepare = 'npx husky install'
         writeFileSync(filePath, JSON.stringify(json, null, 2))
 
-        return runCommand(`cd ${name} && npm i -D husky`)
+        return runCommand(
+          `cd ${name} && ${json.scripts.prepare} && npx husky add .husky/pre-commit "npm run lint" && npx husky add .husky/pre-commit "npm test" && npx husky add .husky/pre-commit "npm run e2e"`,
+        )
       },
     ],
     ['Removing nvm', () => !isYes(nvm), async () => runCommand(`cd ${name} && rm .nvmrc`)],

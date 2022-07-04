@@ -5,8 +5,6 @@
   "license": "MIT",
   "bin": "./bin/cli.js",
   "scripts": {
-    "prepare": "husky install",
-    "postinstall": "npx husky install",
     "test": "nx affected:test",
     "test:all": "nx run-many --all --target=test",
     "lint": "nx affected:lint",
