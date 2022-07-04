@@ -148,17 +148,16 @@ async function install(params) {
       },
     ],
     [
-      'Removing husky',
-      () => !isYes(husky),
+      'Installing husky',
+      () => isYes(husky),
       async () => {
         const filePath = join(workingDir, 'package.json')
         const json = JSON.parse(readFileSync(filePath))
-        delete json.scripts.prepare
-        delete json.scripts.postinstall
-        delete json.devDependencies.husky
+        json.scripts.prepare = 'husky install'
+        json.scripts.postinstall = 'npx husky install'
         writeFileSync(filePath, JSON.stringify(json, null, 2))
 
-        return runCommand(`cd ${name} && rm -rf .husky`)
+        return runCommand(`cd ${name} && npm i -D husky`)
       },
     ],
     ['Removing nvm', () => !isYes(nvm), async () => runCommand(`cd ${name} && rm .nvmrc`)],

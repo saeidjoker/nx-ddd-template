@@ -1,6 +1,6 @@
 {
   "name": "@saeidjoker/nx-ddd-template",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "An Nx Starter with a shared library and NestJs as backend",
   "license": "MIT",
   "bin": "./bin/cli.js",
@@ -35,7 +35,6 @@
     "eslint": "~8.15.0",
     "eslint-config-prettier": "8.1.0",
     "eslint-plugin-prettier": "^4.0.0",
-    "husky": "^8.0.1",
     "jest": "27.5.1",
     "nx": "14.3.6",
     "prettier": "^2.6.2",
