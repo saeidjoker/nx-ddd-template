@@ -156,7 +156,7 @@ async function install(params) {
       () => true,
       async () => {
         const filePath = join(workingDir, 'package.json')
-        const json = JSON.parse(readFileSync(filePath))
+        const json = JSON.parse(readFileSync(filePath, { encoding: 'utf8', flag: 'r' }))
         json.name = name
         json.version = '0.0.1'
         writeFileSync(filePath, JSON.stringify(json, null, 2))
@@ -170,7 +170,7 @@ async function install(params) {
       async () => {
         console.log(`Repository located at ${rootDir}. Will add lefthook.yaml there.`)
         var sampleLeftHookFilePath = join(workingDir, 'lefthook.yaml.sample')
-        const str = readFileSync(sampleLeftHookFilePath)
+        const str = readFileSync(sampleLeftHookFilePath, { encoding: 'utf8', flag: 'r' }).toString()
         writeFileSync(join(rootDir, 'lefthook.yml'), str.replace(/e-commerce/g, name))
         return runCommand(`cd ${rootDir} && npx lefthook run pre-commit`)
       },
