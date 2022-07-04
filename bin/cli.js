@@ -163,24 +163,25 @@ async function install(params) {
         return true
       },
     ],
+    [`Installing dependencies for ${name}`, () => true, async () => runCommand(`cd ${name} && npm install`)],
     [
       'Installing lefthook',
       () => isYes(lefthook),
       async () => {
         console.log(`Repository located at ${rootDir}. Will add lefthook.yaml there.`)
         var sampleLeftHookFilePath = join(workingDir, 'lefthook.yaml.sample')
-        replaceInFileSync({
-          files: [sampleLeftHookFilePath],
-          from: 'e-commerce',
-          to: name,
-        })
-        copyFileSync(sampleLeftHookFilePath, join(rootDir, 'lefthook.yml'))
-        unlinkSync(sampleLeftHookFilePath)
+        const str = readFileSync(sampleLeftHookFilePath)
+        writeFileSync(join(rootDir, 'lefthook.yml'), str.replace(/e-commerce/g, name))
         return runCommand(`cd ${rootDir} && npx lefthook run pre-commit`)
       },
     ],
-    ['Removing nvm', () => !isYes(nvm), async () => runCommand(`cd ${name} && rm .nvmrc`)],
-    [`Installing dependencies for ${name}`, () => true, async () => runCommand(`cd ${name} && npm install`)],
+    [
+      'Remove lefthook sample file',
+      () => true,
+      async () => {
+        unlinkSync(join(workingDir, 'lefthook.yaml.sample'))
+      },
+    ][('Removing nvm', () => !isYes(nvm), async () => runCommand(`cd ${name} && rm .nvmrc`))],
   ]
 
   for (let i = 0; i < commands.length; i++) {
