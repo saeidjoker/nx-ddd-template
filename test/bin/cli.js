@@ -130,7 +130,7 @@ async function install(params) {
 
         // cd into directory and resolve rootDir
         workingDir = join(workingDir, name)
-        rootDir = resolve(workingDir, rootpath)
+        rootDir = resolve(rootpath, workingDir)
 
         return true
       },

@@ -1,6 +1,6 @@
 {
   "name": "@saeidjoker/nx-ddd-template",
-  "version": "0.0.21",
+  "version": "0.0.19",
   "description": "An Nx Starter with a shared library and NestJs as backend",
   "license": "MIT",
   "bin": "./bin/cli.js",
