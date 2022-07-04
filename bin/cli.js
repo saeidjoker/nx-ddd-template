@@ -9,7 +9,6 @@ const {
   createWriteStream,
   renameSync,
   copyFileSync,
-  rmSync,
 } = require('fs')
 const { join, resolve } = require('path')
 const { replaceInFileSync } = require('replace-in-file')
@@ -176,7 +175,7 @@ async function install(params) {
           to: name,
         })
         copyFileSync(sampleLeftHookFilePath, join(workingDir, 'lefthook.yml'))
-        rmSync(sampleLeftHookFilePath)
+        unlinkSync(sampleLeftHookFilePath)
         return runCommand(`cd ${rootDir} && npx lefthook run pre-commit`)
       },
     ],
