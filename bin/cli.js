@@ -175,13 +175,8 @@ async function install(params) {
         return runCommand(`cd ${rootDir} && npx lefthook run pre-commit`)
       },
     ],
-    [
-      'Remove lefthook sample file',
-      () => true,
-      async () => {
-        unlinkSync(join(workingDir, 'lefthook.yaml.sample'))
-      },
-    ][('Removing nvm', () => !isYes(nvm), async () => runCommand(`cd ${name} && rm .nvmrc`))],
+    ['Remove lefthook sample', () => true, async () => runCommand(`rm ${join(workingDir, 'lefthook.yaml.sample')}`)],
+    [('Removing nvm', () => !isYes(nvm), async () => runCommand(`cd ${name} && rm .nvmrc`))],
   ]
 
   for (let i = 0; i < commands.length; i++) {
