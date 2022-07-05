@@ -176,7 +176,7 @@ async function install(params) {
       },
     ],
     ['Remove lefthook sample', () => true, async () => runCommand(`rm ${join(workingDir, 'lefthook.yaml.sample')}`)],
-    [('Removing nvm', () => !isYes(nvm), async () => runCommand(`cd ${name} && rm .nvmrc`))],
+    ['Removing nvm', () => !isYes(nvm), async () => runCommand(`cd ${name} && rm .nvmrc`)],
   ]
 
   for (let i = 0; i < commands.length; i++) {
