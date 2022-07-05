@@ -110,6 +110,11 @@ async function install(params) {
       `Downloading repository with name ${name}`,
       () => true,
       async () => {
+        if (!name) {
+          console.log('Please enter a name for your repository')
+          process.exit(-1)
+          return false
+        }
         if (existsSync(join(workingDir, name))) {
           console.log(`Directory ${name} already exists! Please remove it first to continue`)
           process.exit(-1)
