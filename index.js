@@ -204,7 +204,7 @@ async function install(params) {
     [
       'Create Shared project',
       () => true,
-      async () => runCommand(`cd ${name} && nx g @nrwl/nest:lib shared --publishable --importPath="@${name}/shared"`),
+      async () => runCommand(`cd ${name} && nx g @nrwl/nest:lib ${sharedName} --publishable --importPath="@${name}/${sharedName}"`),
     ],
     [
       'Update Shared project eslintrc',
@@ -223,8 +223,9 @@ async function install(params) {
 
         const sourceDir = join(workingDir, 'nx-ddd-template-main')
 
-        removeSync(join(workingDir, 'shared/src'))
-        copySync(join(sourceDir, 'shared/src'), join(workingDir, 'shared/src'))
+        const sharedDir = join(workingDir, `packages/${sharedName}/src`)
+        removeSync(sharedDir)
+        copySync(join(sourceDir, 'shared/src'), sharedDir)
 
         removeSync(sourceDir)
 
@@ -289,7 +290,7 @@ commands:
 
   console.log("Congratulations! You're API app and Shared library are ready.")
   console.log('Follow the following commands to start')
-  console.log(`cd ${name} && nx serve api`)
+  console.log(`cd ${name} && nx serve ${apiName}`)
 }
 
 async function main() {
