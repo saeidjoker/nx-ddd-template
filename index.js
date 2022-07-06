@@ -224,7 +224,7 @@ async function install(params) {
         const sourceDir = join(workingDir, 'nx-ddd-template-main')
 
         removeSync(join(workingDir, 'shared/src'))
-        copySync(join(sourceDir, 'shared/src'), join(workingDir, 'shared'))
+        copySync(join(sourceDir, 'shared/src'), join(workingDir, 'shared/src'))
 
         removeSync(sourceDir)
 
