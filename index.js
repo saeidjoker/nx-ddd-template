@@ -91,12 +91,6 @@ async function interactiveMode() {
           default: true,
         },
         {
-          type: 'confirm',
-          name: 'lefthook',
-          message: 'Use lefthook?',
-          default: true,
-        },
-        {
           type: 'input',
           name: 'rootpath',
           message: 'Relative path to the repository root folder',
@@ -105,7 +99,6 @@ async function interactiveMode() {
       ])
       .then((answers) => {
         answers.nvm = answers.nvm ? 'y' : 'n'
-        answers.lefthook = answers.lefthook ? 'y' : 'n'
         resolve(answers)
       })
       .catch((error) => {
@@ -120,7 +113,7 @@ async function interactiveMode() {
 }
 
 async function install(params) {
-  const { nvm, lefthook, name, rootpath, apiName, sharedName } = params
+  const { nvm, name, rootpath, apiName, sharedName } = params
 
   let workingDir = process.cwd()
   let rootDir = null
@@ -254,25 +247,6 @@ async function install(params) {
         return true
       },
     ],
-    [
-      'Create lefthook file',
-      () => isYes(lefthook),
-      async () => {
-        const yml = `pre-commit:
-parallel: true
-commands:
-  linter:
-    run: cd ${name} && npm run lint
-  test:
-    run: cd ${name} && npm test
-  e2e:
-    run: cd ${name} && npm run e2e
-`
-        writeFileSync(join(rootDir, 'lefthook.yml'), yml)
-
-        return runCommand(`npx lefthook run pre-commit`)
-      },
-    ],
   ]
 
   for (let i = 0; i < commands.length; i++) {
@@ -299,13 +273,12 @@ async function main() {
     .option('--api-name <api>', 'API project name', 'api')
     .option('--shared-name <shared>', 'Shared library name', 'shared')
     .option('--nvm <Y/n>', 'Use NVM', 'y')
-    .option('--lefthook <Y/n>', 'Use lefthook', 'y')
     .option('--rootpath <path>', 'Relative path to the repository root folder', '..')
     .parse(process.argv)
     .opts()
 
   const hasRequiredOptions =
-    options.name && options.apiName && options.sharedName && options.nvm && options.lefthook && options.rootpath
+    options.name && options.apiName && options.sharedName && options.nvm && options.rootpath
   if (!hasRequiredOptions) {
     await install(await interactiveMode())
   } else {
