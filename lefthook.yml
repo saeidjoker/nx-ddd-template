@@ -1,9 +1,0 @@
-pre-commit:
-parallel: true
-commands:
-  linter:
-    run: cd check && npm run lint
-  test:
-    run: cd check && npm test
-  e2e:
-    run: cd check && npm run e2e
