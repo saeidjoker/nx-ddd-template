@@ -16,7 +16,7 @@ describe('DomainEvents', () => {
         super(UserNameChanged)
       }
       async handle(event: UserNameChanged): Promise<void> {
-        bag.push('event handled')
+        bag.push(`event handled: ${event.correlationId}`)
       }
     }
     interface UserProps {
@@ -37,6 +37,7 @@ describe('DomainEvents', () => {
           new UserNameChanged({
             id: uuid(),
             occurredOn: new SystemClock().now(),
+            correlationId: this.id,
             payload: {
               newName: name,
             },
@@ -50,7 +51,10 @@ describe('DomainEvents', () => {
     const user = new User(uuid(), { name: 'saeed' })
     user.setName('akbar')
     await DomainEvents.publish()
+    // second call must not work since first call to publish will clear containers
+    await DomainEvents.publish()
 
-    console.log(bag)
+    expect(bag.length).toBe(1)
+    expect(bag[0]).toBe(`event handled: ${user.id}`)
   })
 })

@@ -2,6 +2,10 @@ import { DomainEvent, DomainEventClass } from './domain-event'
 import { DomainEventContainer } from './domain-event-container'
 import { DomainEventHandler } from './domain-event.handler'
 
+/**
+ * A basic observer for domain events in application.
+ * This allows publishing in-process domain events synchronously
+ */
 export class DomainEvents {
   private static subscribers: Map<string, DomainEventHandler[]> = new Map()
   private static containers: Map<string, DomainEventContainer> = new Map()
