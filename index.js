@@ -197,7 +197,10 @@ async function install(params) {
     [
       'Create Shared project',
       () => true,
-      async () => runCommand(`cd ${name} && nx g @nrwl/nest:lib ${sharedName} --publishable --importPath="@${name}/${sharedName}"`),
+      async () =>
+        runCommand(
+          `cd ${name} && nx g @nrwl/nest:lib ${sharedName} --publishable --importPath="@${name}/${sharedName}"`,
+        ),
     ],
     [
       'Update Shared project eslintrc',
@@ -216,9 +219,8 @@ async function install(params) {
 
         const sourceDir = join(workingDir, 'nx-ddd-template-main')
 
-        const sharedDir = join(workingDir, `packages/${sharedName}/src`)
-        removeSync(sharedDir)
-        copySync(join(sourceDir, 'shared/src'), sharedDir)
+        removeSync(join(workingDir, `packages/${sharedName}/src`))
+        copySync(join(sourceDir, 'shared'), join(workingDir, `packages/${sharedName}`))
 
         removeSync(sourceDir)
 
@@ -277,8 +279,7 @@ async function main() {
     .parse(process.argv)
     .opts()
 
-  const hasRequiredOptions =
-    options.name && options.apiName && options.sharedName && options.nvm && options.rootpath
+  const hasRequiredOptions = options.name && options.apiName && options.sharedName && options.nvm && options.rootpath
   if (!hasRequiredOptions) {
     await install(await interactiveMode())
   } else {

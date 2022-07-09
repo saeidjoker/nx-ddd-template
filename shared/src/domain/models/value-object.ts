@@ -1,6 +1,6 @@
 import { cloneDeep, isEqual } from 'lodash'
 
-export abstract class ValueObject<TProps extends { [key: string]: unknown }> {
+export abstract class ValueObject<TProps> {
   readonly props: Readonly<TProps>
 
   constructor(props: TProps) {
