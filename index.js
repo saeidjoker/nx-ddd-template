@@ -32,7 +32,7 @@ function runCommand(command) {
     execSync(command, { stdio: 'inherit' })
     return true
   } catch (error) {
-    console.warn(`Failed to execute ${command}`, e)
+    console.warn(`Failed to execute ${command}`, error)
     return false
   }
 }
